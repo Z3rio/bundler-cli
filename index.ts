@@ -2,7 +2,8 @@
 import { execSync } from "child_process";
 import { removeSync } from "fs-extra";
 
-const verbose: boolean = false;
+const verbose: boolean =
+  process.argv.includes("-v") || process.argv.includes("-verbose");
 const cwd = process.cwd();
 let config: Config | null = null;
 const globalIgnores = ["bundle.config.js"];

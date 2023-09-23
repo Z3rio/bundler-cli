@@ -3,7 +3,7 @@
 // index.ts
 var import_child_process = require("child_process");
 var import_fs_extra = require("fs-extra");
-var verbose = false;
+var verbose = process.argv.includes("-v") || process.argv.includes("-verbose");
 var cwd = process.cwd();
 var config = null;
 var globalIgnores = ["bundle.config.js"];
