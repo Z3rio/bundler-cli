@@ -72,6 +72,15 @@ var data = {};
       }
       return null;
     }
+    function fxManifestContainsDevUiPage(text) {
+      const lines = text.split(/\r?\n|\r|\n/g).filter((line) => line.includes("ui_page"));
+      for (const line of lines) {
+        if (line.includes("--") == false && line.includes("localhost") == true) {
+          return true;
+        }
+      }
+      return false;
+    }
     function execute(cmd) {
       (0, import_child_process.execSync)(cmd, verbose ? { stdio: [0, 1, 2] } : void 0);
     }
@@ -101,6 +110,9 @@ var data = {};
               version
             };
           }
+        }
+        if (fxManifestContainsDevUiPage(fxmanifestData) == true) {
+          console.log("REMOVE/COMMENT THE DEV UI_PAGE");
         }
         (0, import_fs_extra.writeFile)(dataPath, JSON.stringify(data));
         if (config !== null && validateConfig(config)) {

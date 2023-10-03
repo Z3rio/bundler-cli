@@ -75,6 +75,23 @@ let data: Record<string, DataRecord> = {};
       return null;
     }
 
+    function fxManifestContainsDevUiPage(text: string): boolean {
+      const lines = text
+        .split(/\r?\n|\r|\n/g)
+        .filter((line: string) => line.includes("ui_page"));
+
+      for (const line of lines) {
+        if (
+          line.includes("--") == false &&
+          line.includes("localhost") == true
+        ) {
+          return true;
+        }
+      }
+
+      return false;
+    }
+
     function execute(cmd: string): void {
       execSync(cmd, verbose ? { stdio: [0, 1, 2] } : undefined);
     }
@@ -109,6 +126,10 @@ let data: Record<string, DataRecord> = {};
               version: version,
             };
           }
+        }
+
+        if (fxManifestContainsDevUiPage(fxmanifestData) == true) {
+          console.log("REMOVE/COMMENT THE DEV UI_PAGE");
         }
 
         writeFile(dataPath, JSON.stringify(data));
