@@ -1,77 +1,148 @@
 #! /usr/bin/env node
 import { execSync } from "child_process";
-import { removeSync } from "fs-extra";
+import path from "node:path";
+import { existsSync, readFile, removeSync, writeFile } from "fs-extra";
+import { Config, DataRecord } from "./structs";
 
+const dataPath = path.join(__dirname, "../", "data.json");
 const verbose: boolean =
   process.argv.includes("-v") || process.argv.includes("-verbose");
 const cwd = process.cwd();
 let config: Config | null = null;
-const globalIgnores = ["bundle.config.js"];
+const globalIgnores = [
+  "bundle.config.js",
+  "bundle.ps1",
+  ".git",
+  ".github",
+  ".gitattributes",
+  ".gitignore",
+];
 
-interface Config {
-  name: string;
-  tasks?: string[];
-  ignore?: string[];
-}
+// path, Data
+let data: Record<string, DataRecord> = {};
 
-function debugLog(msg: string): void {
-  if (verbose == true) {
-    console.log(msg);
+(async () => {
+  if (existsSync(dataPath) == false) {
+    await writeFile(dataPath, "{}");
   }
-}
 
-function validateConfig(cfg: unknown): boolean {
-  return (
-    cfg !== null &&
-    typeof cfg == "object" &&
-    "name" in cfg &&
-    typeof cfg.name == "string" &&
-    (!("tasks" in cfg) ||
-      typeof cfg.tasks == "undefined" ||
-      typeof cfg.tasks == "object") &&
-    (!("ignore" in cfg) ||
-      typeof cfg.ignore == "undefined" ||
-      typeof cfg.ignore == "object")
-  );
-}
-
-function execute(cmd: string): void {
-  execSync(cmd, verbose ? { stdio: [0, 1, 2] } : undefined);
-}
-
-try {
-  config = require(cwd + "/bundler.config");
-} catch (e) {
-  console.log("Error: Could not find/require bundler.config.js file");
-  debugLog(e);
-}
-
-if (config !== null && validateConfig(config)) {
-  debugLog("Valid config: " + JSON.stringify(config));
-
-  if (config.tasks) {
-    for (let i = 0; i < config.tasks.length; i++) {
-      execute(config.tasks[i]);
+  readFile(dataPath, "utf8", (err, dataJsonData) => {
+    if (err) {
+      console.error(err);
+      return;
     }
-  }
 
-  let zipCmd = `7z a ${config.name}.zip`;
+    data = JSON.parse(dataJsonData);
 
-  if (config.ignore) {
-    config.ignore = [...config.ignore, ...globalIgnores];
-
-    for (let i = 0; i < config.ignore.length; i++) {
-      zipCmd += ` -x!${config.ignore[i]}`;
+    function debugLog(msg: string): void {
+      if (verbose == true) {
+        console.log(msg);
+      }
     }
-  }
 
-  debugLog("Deleted zip");
-  removeSync(`${cwd}/${config.name}.zip`);
+    function validateConfig(cfg: unknown): boolean {
+      return (
+        cfg !== null &&
+        typeof cfg == "object" &&
+        "name" in cfg &&
+        typeof cfg.name == "string" &&
+        (!("tasks" in cfg) ||
+          typeof cfg.tasks == "undefined" ||
+          typeof cfg.tasks == "object") &&
+        (!("ignore" in cfg) ||
+          typeof cfg.ignore == "undefined" ||
+          typeof cfg.ignore == "object")
+      );
+    }
 
-  debugLog("Created zip");
-  execute(zipCmd);
+    function getFxManifestVersion(text: string): string | null {
+      text = text.replace("fx_version", "");
+      const idx = text.indexOf("version");
 
-  console.log("Successfully bundled files");
-} else {
-  console.log("Error: Invalid config structure");
-}
+      if (idx !== -1) {
+        const lines = text.substring(idx).split(/\r?\n|\r|\n/g);
+
+        if (lines.length >= 1) {
+          const line = lines[0];
+          const splits = line.split(line.includes("'") == true ? "'" : '"');
+
+          if (splits.length >= 2) {
+            return splits[1];
+          }
+        }
+      }
+
+      return null;
+    }
+
+    function execute(cmd: string): void {
+      execSync(cmd, verbose ? { stdio: [0, 1, 2] } : undefined);
+    }
+
+    try {
+      config = require(cwd + "/bundler.config");
+    } catch (e) {
+      console.log("Error: Could not find/require bundler.config.js file");
+      debugLog(e);
+    }
+
+    readFile(
+      path.join(cwd, "fxmanifest.lua"),
+      "utf8",
+      (err, fxmanifestData) => {
+        if (err) {
+          console.error(err);
+          return;
+        }
+
+        const version = getFxManifestVersion(fxmanifestData);
+
+        if (version !== null) {
+          if (data[cwd] !== undefined) {
+            if (data[cwd].version == version) {
+              console.log("DONT FORGET TO UPDATE THE VERSION");
+            }
+
+            data[cwd].version = version;
+          } else {
+            data[cwd] = {
+              version: version,
+            };
+          }
+        }
+
+        writeFile(dataPath, JSON.stringify(data));
+
+        if (config !== null && validateConfig(config)) {
+          debugLog("Valid config: " + JSON.stringify(config));
+
+          if (config.tasks) {
+            for (let i = 0; i < config.tasks.length; i++) {
+              execute(config.tasks[i]);
+            }
+          }
+
+          let zipCmd = `7z a ${config.name}.zip`;
+
+          if (config.ignore) {
+            config.ignore = [...config.ignore, ...globalIgnores];
+
+            for (let i = 0; i < config.ignore.length; i++) {
+              zipCmd += ` -x!${config.ignore[i]}`;
+            }
+          }
+
+          debugLog("Deleted zip");
+          removeSync(`${cwd}/${config.name}.zip`);
+
+          debugLog("Created zip");
+          execute(zipCmd);
+
+          console.log("Successfully bundled files");
+        } else {
+          console.log("Error: Invalid config structure");
+        }
+      },
+    );
+  });
+})();
