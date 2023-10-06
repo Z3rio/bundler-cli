@@ -38,7 +38,6 @@ var globalIgnores = [
   ".gitattributes",
   ".gitignore"
 ];
-var data = {};
 (async () => {
   if ((0, import_fs_extra.existsSync)(dataPath) == false) {
     await (0, import_fs_extra.writeFile)(dataPath, "{}");
@@ -48,7 +47,12 @@ var data = {};
       console.error(err);
       return;
     }
-    data = JSON.parse(dataJsonData);
+    let data = null;
+    try {
+      data = JSON.parse(dataJsonData);
+    } catch (e) {
+      data = {};
+    }
     function debugLog(msg) {
       if (verbose == true) {
         console.log(msg);
@@ -99,6 +103,9 @@ var data = {};
           return;
         }
         const version = getFxManifestVersion(fxmanifestData);
+        if (data == null) {
+          data = {};
+        }
         if (version !== null) {
           if (data[cwd] !== void 0) {
             if (data[cwd].version == version) {

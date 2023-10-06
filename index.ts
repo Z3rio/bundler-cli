@@ -32,7 +32,13 @@ let data: Record<string, DataRecord> = {};
       return;
     }
 
-    data = JSON.parse(dataJsonData);
+    let data: null | object = null;
+
+    try {
+      data = JSON.parse(dataJsonData);
+    } catch (e) {
+      data = {};
+    }
 
     function debugLog(msg: string): void {
       if (verbose == true) {
@@ -114,6 +120,10 @@ let data: Record<string, DataRecord> = {};
 
         const version = getFxManifestVersion(fxmanifestData);
 
+        if (data == null) {
+          data = {};
+        }
+
         if (version !== null) {
           if (data[cwd] !== undefined) {
             if (data[cwd].version == version) {
@@ -163,7 +173,7 @@ let data: Record<string, DataRecord> = {};
         } else {
           console.log("Error: Invalid config structure");
         }
-      },
+      }
     );
   });
 })();
