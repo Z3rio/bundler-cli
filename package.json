@@ -1,14 +1,15 @@
 {
   "name": "@zerio2/bundler-cli",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "build": "tsup index.ts",
     "dev": "tsup index.ts --watch"
   },
   "bin": {
-    "zBundler": "./dist/index.js"
+    "zBundler": "./dist/index.cjs"
   },
   "repository": {
     "type": "git",

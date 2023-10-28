@@ -24,7 +24,7 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 
 // index.ts
 var import_child_process = require("child_process");
-var import_node_path = __toESM(require("path"));
+var import_node_path = __toESM(require("path"), 1);
 var import_fs_extra = require("fs-extra");
 var dataPath = import_node_path.default.join(__dirname, "../", "data.json");
 var verbose = process.argv.includes("-v") || process.argv.includes("-verbose");
@@ -42,7 +42,7 @@ var globalIgnores = [
   if ((0, import_fs_extra.existsSync)(dataPath) == false) {
     await (0, import_fs_extra.writeFile)(dataPath, "{}");
   }
-  (0, import_fs_extra.readFile)(dataPath, "utf8", (err, dataJsonData) => {
+  (0, import_fs_extra.readFile)(dataPath, "utf8", async (err, dataJsonData) => {
     if (err) {
       console.error(err);
       return;
@@ -89,10 +89,17 @@ var globalIgnores = [
       (0, import_child_process.execSync)(cmd, verbose ? { stdio: [0, 1, 2] } : void 0);
     }
     try {
-      config = require(cwd + "/bundler.config");
+      const importedConfig = await import("file:///" + cwd + "/bundler.config.mjs");
+      config = importedConfig.default;
     } catch (e) {
-      console.log("Error: Could not find/require bundler.config.js file");
       debugLog(e);
+      try {
+        const importedConfig = await import("file:///" + cwd + "/bundler.config.js");
+        config = importedConfig.default;
+      } catch (e2) {
+        debugLog(e2);
+        console.log("Error: Could not find/require bundler.config.js file");
+      }
     }
     (0, import_fs_extra.readFile)(
       import_node_path.default.join(cwd, "fxmanifest.lua"),

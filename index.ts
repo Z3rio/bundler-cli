@@ -15,7 +15,7 @@ const globalIgnores = [
   ".git",
   ".github",
   ".gitattributes",
-  ".gitignore",
+  ".gitignore"
 ];
 
 // path, Data
@@ -26,7 +26,7 @@ let data: Record<string, DataRecord> = {};
     await writeFile(dataPath, "{}");
   }
 
-  readFile(dataPath, "utf8", (err, dataJsonData) => {
+  readFile(dataPath, "utf8", async (err, dataJsonData) => {
     if (err) {
       console.error(err);
       return;
@@ -103,10 +103,22 @@ let data: Record<string, DataRecord> = {};
     }
 
     try {
-      config = require(cwd + "/bundler.config");
+      const importedConfig = await import(
+        "file:///" + cwd + "/bundler.config.mjs"
+      );
+      config = importedConfig.default;
     } catch (e) {
-      console.log("Error: Could not find/require bundler.config.js file");
       debugLog(e);
+
+      try {
+        const importedConfig = await import(
+          "file:///" + cwd + "/bundler.config.js"
+        );
+        config = importedConfig.default;
+      } catch (e2) {
+        debugLog(e2);
+        console.log("Error: Could not find/require bundler.config.js file");
+      }
     }
 
     readFile(
@@ -133,7 +145,7 @@ let data: Record<string, DataRecord> = {};
             data[cwd].version = version;
           } else {
             data[cwd] = {
-              version: version,
+              version: version
             };
           }
         }
