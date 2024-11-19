@@ -1,5 +1,7 @@
 # Bundler CLI
 
+## PLEASE NOTE THIS REPO IS BEING MOVED [HERE](https://github.com/Z3rio/fivem-resource-cli)
+
 This is a cli created to execute tasks, then bundle your files into a zip file.
 
 I created this to make the process of uploading my FiveM resources faster. Since
