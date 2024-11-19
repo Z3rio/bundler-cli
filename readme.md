@@ -1,6 +1,8 @@
 # Bundler CLI
 
-## PLEASE NOTE THIS REPO IS BEING MOVED [HERE](https://github.com/Z3rio/fivem-resource-cli)
+## PLEASE NOTE THIS REPO HAS BEEN MOVED
+
+The new Github repo can be found here [here](https://github.com/Z3rio/fivem-resource-cli), the new NPM package can be found [here](https://www.npmjs.com/package/frs-manager)
 
 This is a cli created to execute tasks, then bundle your files into a zip file.
 
